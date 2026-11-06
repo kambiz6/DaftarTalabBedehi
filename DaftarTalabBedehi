@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دفتر طلب و بدهی</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Tahoma,sans-serif;background:#f2f5f3;margin:0;padding:15px;color:#24332b}
+header{background:#176b4b;color:white;padding:20px;border-radius:15px;text-align:center}
+h2{font-size:18px}
+.card{background:white;padding:15px;margin:12px 0;border-radius:13px;box-shadow:0 2px 8px #ddd}
+input,select,button{width:100%;padding:13px;margin:6px 0;border:1px solid #ccc;border-radius:9px;font-size:15px}
+button{background:#176b4b;color:white;border:0;font-weight:bold}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:#e5f3eb;padding:12px;border-radius:10px;text-align:center}
+.stat b{display:block;margin-top:8px}
+.person{border-bottom:1px solid #ddd;padding:12px 0}
+.small{font-size:12px;color:#666}
+.red{color:#b52d2d}
+.green{color:#16834b}
+</style>
+</head>
+<body>
+<header>
+<h2>📒 دفتر طلب و بدهی</h2>
+مدیریت حساب‌های شخصی - تومان
+</header>
+
+<div class="card summary">
+<div class="stat">مجموع طلب‌ها<b id="totalGet">۰</b></div>
+<div class="stat">مجموع بدهی‌ها<b id="totalPay">۰</b></div>
+</div>
+
+<div class="card">
+<h3>➕ افزودن شخص جدید</h3>
+<input id="personName" placeholder="نام و نام خانوادگی">
+<button onclick="addPerson()">ثبت شخص</button>
+</div>
+
+<div class="card">
+<h3>ثبت طلب، بدهی یا تراکنش</h3>
+<select id="personSelect"></select>
+<select id="kind">
+<option value="get">طلب جدید</option>
+<option value="pay">بدهی جدید</option>
+<option value="receive">دریافت طلب</option>
+<option value="payment">پرداخت بدهی</option>
+</select>
+<input id="amount" type="number" placeholder="مبلغ به تومان">
+<input id="note" placeholder="توضیحات">
+<button onclick="addTransaction()">ثبت تراکنش</button>
+</div>
+
+<div class="card">
+<h3>👥 اشخاص و حساب‌ها</h3>
+<div id="peopleList"></div>
+</div>
+
+<script>
+let people=JSON.parse(localStorage.getItem("people")||"[]");
+let transactions=JSON.parse(localStorage.getItem("transactions")||"[]");
+
+const money=n=>Math.round(n).toLocaleString("fa-IR")+" تومان";
+function save(){
+localStorage.setItem("people",JSON.stringify(people));
+localStorage.setItem("transactions",JSON.stringify(transactions));
+render();
+}
+function balance(id){
+let get=0,pay=0;
+transactions.filter(t=>t.person===id).forEach(t=>{
+if(t.kind==="get")get+=t.amount;
+if(t.kind==="receive")get-=t.amount;
+if(t.kind==="pay")pay+=t.amount;
+if(t.kind==="payment")pay-=t.amount;
+});
+return {get,pay};
+}
+function addPerson(){
+let name=document.getElementById("personName").value.trim();
+if(!name)return alert("نام شخص را وارد کن");
+people.push({id:Date.now(),name});
+document.getElementById("personName").value="";
+save();
+}
+function addTransaction(){
+let id=Number(document.getElementById("personSelect").value);
+let kind=document.getElementById("kind").value;
+let amount=Number(document.getElementById("amount").value);
+let note=document.getElementById("note").value.trim();
+if(!id)return alert("ابتدا یک شخص انتخاب کن");
+if(!amount||amount<=0)return alert("مبلغ را درست وارد کن");
+transactions.push({person:id,kind,amount,note,date:new Date().toLocaleDateString("fa-IR")});
+document.getElementById("amount").value="";
+document.getElementById("note").value="";
+save();
+alert("تراکنش ثبت شد");
+}
+function render(){
+let select=document.getElementById("personSelect");
+select.innerHTML='<option value="">انتخاب شخص</option>';
+people.forEach(p=>select.innerHTML+=`<option value="${p.id}">${p.name}</option>`);
+let totalGet=0,totalPay=0;
+let list=document.getElementById("peopleList");
+list.innerHTML="";
+people.forEach(p=>{
+let b=balance(p.id);
+totalGet+=b.get;totalPay+=b.pay;
+let div=document.createElement("div");
+div.className="person";
+let title=document.createElement("b");
+title.textContent=p.name;
+let detail=document.createElement("p");
+detail.innerHTML=`<span class="green">طلب: ${money(b.get)}</span><br><span class="red">بدهی: ${money(b.pay)}</span>`;
+let history=document.createElement("div");
+history.className="small";
+transactions.filter(t=>t.person===p.id).slice().reverse().forEach(t=>{
+let row=document.createElement("div");
+let names={get:"طلب جدید",pay:"بدهی جدید",receive:"دریافت طلب",payment:"پرداخت بدهی"};
+row.textContent=`${t.date} | ${names[t.kind]} | ${money(t.amount)} | ${t.note}`;
+history.appendChild(row);
+});
+div.append(title,detail,history);
+list.appendChild(div);
+});
+document.getElementById("totalGet").textContent=money(totalGet);
+document.getElementById("totalPay").textContent=money(totalPay);
+}
+render();
+</script>
+</body>
+</html>
