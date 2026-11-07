@@ -1,145 +1,320 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#176b4b">
-<meta name="mobile-web-app-capable" content="yes">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#176b4b">
+<meta name="mobile-web-app-capable" content="yes">
 <title>دفتر طلب و بدهی</title>
 <style>
+:root{--green:#176b4b;--pale:#e5f3eb;--red:#b52d2d;--ink:#24332b}
 *{box-sizing:border-box}
-body{font-family:Tahoma,sans-serif;background:#f2f5f3;margin:0;padding:15px;color:#24332b}
-header{background:#176b4b;color:white;padding:20px;border-radius:15px;text-align:center}
-h2{font-size:18px}
-.card{background:white;padding:15px;margin:12px 0;border-radius:13px;box-shadow:0 2px 8px #ddd}
-input,select,button{width:100%;padding:13px;margin:6px 0;border:1px solid #ccc;border-radius:9px;font-size:15px}
-button{background:#176b4b;color:white;border:0;font-weight:bold}
+body{font-family:Tahoma,sans-serif;background:#f2f5f3;margin:0;padding:12px;color:var(--ink);line-height:1.7}
+header{background:var(--green);color:white;padding:18px;border-radius:15px;text-align:center}
+header h1{font-size:21px;margin:0 0 5px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
+nav button{margin:0;padding:10px 5px;font-size:13px}
+.card{background:white;padding:14px;margin:12px 0;border-radius:13px;box-shadow:0 2px 8px #ddd}
+h2{font-size:17px;margin:0 0 12px}
+h3{font-size:15px;margin:0 0 10px}
+input,select,textarea,button{width:100%;padding:11px;margin:5px 0;border:1px solid #ccc;border-radius:9px;font-size:14px;font-family:inherit}
+textarea{min-height:70px}
+button{background:var(--green);color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#64756b}
+button.danger{background:#a83232}
+button.light{background:#e5f3eb;color:var(--green)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.stat{background:#e5f3eb;padding:12px;border-radius:10px;text-align:center}
-.stat b{display:block;margin-top:8px}
-.person{border-bottom:1px solid #ddd;padding:12px 0}
-.small{font-size:12px;color:#666}
-.red{color:#b52d2d}
-.green{color:#16834b}
+.stat{background:var(--pale);padding:12px;border-radius:10px;text-align:center;font-size:13px}
+.stat b{display:block;margin-top:6px;font-size:16px}
+.person,.record{border-bottom:1px solid #e5e5e5;padding:11px 0}
+.small{font-size:12px;color:#66736b}
+.red{color:var(--red)} .green{color:#16834b}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.actions button{font-size:12px;padding:8px}
+.hidden{display:none!important}
+.notice{background:#fff6dc;padding:10px;border-radius:9px;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{border:1px solid #ddd;padding:7px;text-align:right}
+th{background:#e5f3eb}
+.section{display:none}.section.active{display:block}
+footer{text-align:center;color:#777;font-size:11px;padding:20px}
+@media(min-width:700px){body{max-width:850px;margin:auto}nav{grid-template-columns:repeat(6,1fr)}}
+@media print{body{background:white;padding:0}header,nav,.no-print,footer{display:none!important}.card{box-shadow:none;border:0}.section{display:block!important}}
 </style>
 </head>
 <body>
 <header>
-<h2>📒 دفتر طلب و بدهی</h2>
-مدیریت حساب‌های شخصی - تومان
+<h1>📒 دفتر طلب و بدهی</h1>
+مدیریت حساب‌های شخصی و فاکتورها
 </header>
+<nav class="no-print">
+<button onclick="showTab('home')">خانه</button>
+<button onclick="showTab('people')">اشخاص</button>
+<button onclick="showTab('transactions')">تراکنش</button>
+<button onclick="showTab('reports')">گزارش‌ها</button>
+<button onclick="showTab('invoice')">فاکتور</button>
+<button onclick="showTab('backup')">پشتیبان</button>
+</nav>
 
+<section id="home" class="section active">
 <div class="card summary">
-<div class="stat">مجموع طلب‌ها<b id="totalGet">۰</b></div>
-<div class="stat">مجموع بدهی‌ها<b id="totalPay">۰</b></div>
+<div class="stat">مانده طلب‌ها<b id="totalGet">۰</b></div>
+<div class="stat">مانده بدهی‌ها<b id="totalPay">۰</b></div>
+<div class="stat">تعداد اشخاص<b id="peopleCount">۰</b></div>
+<div class="stat">تعداد تراکنش‌ها<b id="transactionCount">۰</b></div>
 </div>
-
 <div class="card">
-<h3>➕ افزودن شخص جدید</h3>
+<h2>آخرین تراکنش‌ها</h2>
+<div id="recentList"></div>
+</div>
+<div class="card">
+<h2>جستجوی سریع</h2>
+<input id="quickSearch" placeholder="نام شخص یا توضیحات..." oninput="renderPeople()">
+<div id="quickResults"></div>
+</div>
+</section>
+
+<section id="people" class="section">
+<div class="card">
+<h2>➕ افزودن شخص</h2>
 <input id="personName" placeholder="نام و نام خانوادگی">
+<input id="personPhone" type="tel" placeholder="شماره موبایل">
+<input id="personAddress" placeholder="آدرس (اختیاری)">
 <button onclick="addPerson()">ثبت شخص</button>
 </div>
-
 <div class="card">
-<h3>ثبت طلب، بدهی یا تراکنش</h3>
+<h2>👥 اشخاص و حساب‌ها</h2>
+<input id="peopleSearch" placeholder="جستجوی نام یا شماره..." oninput="renderPeople()">
+<div id="peopleList"></div>
+</div>
+</section>
+
+<section id="transactions" class="section">
+<div class="card">
+<h2>ثبت طلب، بدهی، دریافت یا پرداخت</h2>
 <select id="personSelect"></select>
 <select id="kind">
-<option value="get">طلب جدید</option>
-<option value="pay">بدهی جدید</option>
-<option value="receive">دریافت طلب</option>
-<option value="payment">پرداخت بدهی</option>
+<option value="get">طلب جدید</option><option value="pay">بدهی جدید</option>
+<option value="receive">دریافت طلب</option><option value="payment">پرداخت بدهی</option>
 </select>
-<input id="amount" type="number" placeholder="مبلغ به تومان">
+<input id="amount" type="number" min="1" placeholder="مبلغ به تومان">
 <input id="note" placeholder="توضیحات">
 <button onclick="addTransaction()">ثبت تراکنش</button>
 </div>
-
 <div class="card">
-<h3>👥 اشخاص و حساب‌ها</h3>
-<div id="peopleList"></div>
+<h2>سوابق تراکنش‌ها</h2>
+<input id="transactionSearch" placeholder="جستجوی شخص یا توضیحات..." oninput="renderTransactions()">
+<div id="transactionList"></div>
 </div>
+</section>
+
+<section id="reports" class="section">
+<div class="card">
+<h2>📊 گزارش حساب‌ها</h2>
+<div class="grid">
+<div><label class="small">از تاریخ ثبت</label><input id="dateFrom" type="date"></div>
+<div><label class="small">تا تاریخ ثبت</label><input id="dateTo" type="date"></div>
+</div>
+<button onclick="renderReport()">نمایش گزارش</button>
+<button class="light" onclick="clearReportDates()">حذف فیلتر تاریخ</button>
+<div id="reportSummary"></div>
+<div id="reportTable"></div>
+<button onclick="exportCSV()">خروجی Excel (CSV)</button>
+<button class="secondary" onclick="window.print()">چاپ گزارش / ذخیره PDF</button>
+</div>
+</section>
+
+<section id="invoice" class="section">
+<div class="card">
+<h2>🧾 صدور فاکتور ساده</h2>
+<div class="notice">ثبت فاکتور به‌تنهایی حساب شخص را تغییر نمی‌دهد. برای جلوگیری از ثبت دوباره، پس از صدور می‌توانید با دکمه جداگانه مبلغ فاکتور را به‌عنوان طلب ثبت کنید.</div>
+<select id="invoicePerson"></select>
+<input id="invoiceTitle" placeholder="شرح کالا یا خدمات">
+<input id="invoiceQty" type="number" min="1" value="1" placeholder="تعداد">
+<input id="invoicePrice" type="number" min="0" placeholder="قیمت واحد به تومان">
+<input id="invoiceDiscount" type="number" min="0" value="0" placeholder="تخفیف به تومان">
+<textarea id="invoiceNote" placeholder="توضیحات فاکتور"></textarea>
+<button onclick="createInvoice()">ثبت فاکتور</button>
+<div id="invoiceOutput"></div>
+</div>
+</section>
+
+<section id="backup" class="section">
+<div class="card">
+<h2>🛡️ پشتیبان‌گیری و بازیابی</h2>
+<p class="small">فایل پشتیبان شامل اشخاص، تراکنش‌ها و فاکتورهاست. آن را در جای امن نگه دار.</p>
+<button onclick="backupData()">دانلود نسخه پشتیبان</button>
+<label class="small">بازیابی از فایل پشتیبان</label>
+<input id="restoreFile" type="file" accept=".json,application/json">
+<button class="secondary" onclick="restoreData()">بازیابی اطلاعات</button>
+</div>
+<div class="card">
+<h2>پیامک یادآوری</h2>
+<p class="small">با انتخاب شخص، متن پیام آماده می‌شود و برنامه پیامک گوشی باز می‌شود؛ ارسال نهایی با تأیید خودت است.</p>
+<select id="smsPerson"></select>
+<textarea id="smsText" placeholder="متن پیامک"></textarea>
+<button onclick="prepareSMS()">آماده‌سازی پیامک</button>
+</div>
+<div class="card">
+<h2>خروجی فاکتورها</h2>
+<button class="secondary" onclick="exportInvoices()">دانلود فهرست فاکتورها (CSV)</button>
+</div>
+<div class="notice">اطلاعات فعلی روی همین مرورگر ذخیره می‌شوند. برای همگام‌سازی گوشی و کامپیوتر یا ارسال خودکار پیامک، اتصال سرویس جداگانه لازم است.</div>
+</section>
+
+<footer>دفتر طلب و بدهی - نسخه توسعه‌یافته</footer>
 
 <script>
-let people=JSON.parse(localStorage.getItem("people")||"[]");
-let transactions=JSON.parse(localStorage.getItem("transactions")||"[]");
-
-const money=n=>Math.round(n).toLocaleString("fa-IR")+" تومان";
-function save(){
-localStorage.setItem("people",JSON.stringify(people));
-localStorage.setItem("transactions",JSON.stringify(transactions));
-render();
+const $=id=>document.getElementById(id);
+const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}};
+let people=read("people",[]);
+let transactions=read("transactions",[]);
+let invoices=read("invoices",[]);
+const money=n=>Math.round(Number(n)||0).toLocaleString("fa-IR")+" تومان";
+const safeDate=()=>new Date().toISOString().slice(0,10);
+function persist(){
+ localStorage.setItem("people",JSON.stringify(people));
+ localStorage.setItem("transactions",JSON.stringify(transactions));
+ localStorage.setItem("invoices",JSON.stringify(invoices));
+ renderAll();
+}
+function showTab(id){
+ document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+ $(id).classList.add("active");
+ renderAll();
 }
 function balance(id){
-let get=0,pay=0;
-transactions.filter(t=>t.person===id).forEach(t=>{
-if(t.kind==="get")get+=t.amount;
-if(t.kind==="receive")get-=t.amount;
-if(t.kind==="pay")pay+=t.amount;
-if(t.kind==="payment")pay-=t.amount;
-});
-return {get,pay};
+ let get=0,pay=0;
+ transactions.filter(t=>Number(t.person)===Number(id)).forEach(t=>{
+  const a=Number(t.amount)||0;
+  if(t.kind==="get")get+=a;
+  if(t.kind==="receive")get-=a;
+  if(t.kind==="pay")pay+=a;
+  if(t.kind==="payment")pay-=a;
+ });
+ return {get,pay};
 }
 function addPerson(){
-let name=document.getElementById("personName").value.trim();
-if(!name)return alert("نام شخص را وارد کن");
-people.push({id:Date.now(),name});
-document.getElementById("personName").value="";
-save();
+ const name=$("personName").value.trim();
+ if(!name)return alert("نام شخص را وارد کن");
+ people.push({id:Date.now(),name,phone:$("personPhone").value.trim(),address:$("personAddress").value.trim()});
+ $("personName").value=$("personPhone").value=$("personAddress").value="";
+ persist();alert("شخص ثبت شد");
 }
 function addTransaction(){
-let id=Number(document.getElementById("personSelect").value);
-let kind=document.getElementById("kind").value;
-let amount=Number(document.getElementById("amount").value);
-let note=document.getElementById("note").value.trim();
-if(!id)return alert("ابتدا یک شخص انتخاب کن");
-if(!amount||amount<=0)return alert("مبلغ را درست وارد کن");
-transactions.push({person:id,kind,amount,note,date:new Date().toLocaleDateString("fa-IR")});
-document.getElementById("amount").value="";
-document.getElementById("note").value="";
-save();
-alert("تراکنش ثبت شد");
+ const id=Number($("personSelect").value),kind=$("kind").value,amount=Number($("amount").value),note=$("note").value.trim();
+ if(!id)return alert("ابتدا یک شخص انتخاب کن");
+ if(!Number.isFinite(amount)||amount<=0)return alert("مبلغ را درست وارد کن");
+ transactions.push({id:Date.now(),person:id,kind,amount,note,date:safeDate(),dateFa:new Date().toLocaleDateString("fa-IR")});
+ $("amount").value=$("note").value="";
+ persist();alert("تراکنش ثبت شد");
 }
-function render(){
-let select=document.getElementById("personSelect");
-select.innerHTML='<option value="">انتخاب شخص</option>';
-people.forEach(p=>select.innerHTML+=`<option value="${p.id}">${p.name}</option>`);
-let totalGet=0,totalPay=0;
-let list=document.getElementById("peopleList");
-list.innerHTML="";
-people.forEach(p=>{
-let b=balance(p.id);
-totalGet+=b.get;totalPay+=b.pay;
-let div=document.createElement("div");
-div.className="person";
-let title=document.createElement("b");
-title.textContent=p.name;
-let detail=document.createElement("p");
-detail.innerHTML=`<span class="green">طلب: ${money(b.get)}</span><br><span class="red">بدهی: ${money(b.pay)}</span>`;
-let history=document.createElement("div");
-history.className="small";
-transactions.filter(t=>t.person===p.id).slice().reverse().forEach(t=>{
-let row=document.createElement("div");
-let names={get:"طلب جدید",pay:"بدهی جدید",receive:"دریافت طلب",payment:"پرداخت بدهی"};
-row.textContent=`${t.date} | ${names[t.kind]} | ${money(t.amount)} | ${t.note}`;
-history.appendChild(row);
-});
-div.append(title,detail,history);
-list.appendChild(div);
-});
-document.getElementById("totalGet").textContent=money(totalGet);
-document.getElementById("totalPay").textContent=money(totalPay);
+function personName(id){return people.find(p=>Number(p.id)===Number(id))?.name||"شخص حذف‌شده"}
+function kindName(k){return {get:"طلب جدید",pay:"بدهی جدید",receive:"دریافت طلب",payment:"پرداخت بدهی"}[k]||k}
+function options(id){
+ const old=$(id).value;
+ $(id).innerHTML='<option value="">انتخاب شخص</option>'+people.map(p=>`<option value="${p.id}">${escapeHTML(p.name)}</option>`).join("");
+ if(people.some(p=>String(p.id)===old))$(id).value=old;
 }
-render();
+function escapeHTML(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderPeople(){
+ const q=(($("peopleSearch")?.value||$("quickSearch")?.value)||"").trim().toLowerCase();
+ const target=$("peopleList"),quick=$("quickResults");
+ let html="";
+ people.filter(p=>(p.name+" "+(p.phone||"")).toLowerCase().includes(q)).forEach(p=>{
+  const b=balance(p.id);
+  html+=`<div class="person"><b>${escapeHTML(p.name)}</b><div class="small">${escapeHTML(p.phone||"بدون شماره")} ${escapeHTML(p.address||"")}</div><div class="green">طلب: ${money(b.get)}</div><div class="red">بدهی: ${money(b.pay)}</div>
+  <div class="actions"><button class="light" onclick="editPerson(${p.id})">ویرایش شخص</button><button class="secondary" onclick="smsFor(${p.id})">پیامک</button><button class="danger" onclick="deletePerson(${p.id})">حذف شخص</button><button onclick="selectPerson(${p.id})">ثبت تراکنش</button></div></div>`;
+ });
+ if(target)target.innerHTML=html||'<p class="small">شخصی پیدا نشد.</p>';
+ if(quick)quick.innerHTML=html||'<p class="small">نتیجه‌ای پیدا نشد.</p>';
+}
+function editPerson(id){
+ const p=people.find(x=>Number(x.id)===Number(id));if(!p)return;
+ const name=prompt("نام شخص:",p.name);if(name===null)return;if(!name.trim())return alert("نام خالی قابل قبول نیست");
+ const phone=prompt("شماره موبایل:",p.phone||"");if(phone===null)return;
+ const address=prompt("آدرس:",p.address||"");if(address===null)return;
+ p.name=name.trim();p.phone=phone.trim();p.address=address.trim();persist();
+}
+function deletePerson(id){
+ if(transactions.some(t=>Number(t.person)===Number(id))||invoices.some(i=>Number(i.person)===Number(id)))return alert("این شخص سابقه مالی دارد. برای حفظ سوابق، حذف او ممکن نیست.");
+ if(confirm("این شخص حذف شود؟")){people=people.filter(p=>Number(p.id)!==Number(id));persist()}
+}
+function selectPerson(id){showTab("transactions");$("personSelect").value=String(id)}
+function renderTransactions(){
+ const q=($("transactionSearch")?.value||"").trim().toLowerCase();
+ const list=$("transactionList");if(!list)return;
+ const rows=transactions.slice().reverse().filter(t=>(personName(t.person)+" "+(t.note||"")+" "+kindName(t.kind)).toLowerCase().includes(q));
+ list.innerHTML=rows.map(t=>`<div class="record"><b>${escapeHTML(personName(t.person))}</b><div class="small">${escapeHTML(t.dateFa||t.date||"")}</div>${kindName(t.kind)}: ${money(t.amount)}<div class="small">${escapeHTML(t.note||"بدون توضیح")}</div><div class="actions"><button class="danger" onclick="deleteTransaction(${t.id})">حذف تراکنش</button></div></div>`).join("")||'<p class="small">تراکنشی ثبت نشده است.</p>';
+}
+function deleteTransaction(id){
+ if(!confirm("تراکنش حذف شود؟ مانده حساب دوباره محاسبه می‌شود."))return;
+ transactions=transactions.filter(t=>Number(t.id)!==Number(id));persist();
+}
+function renderHome(){
+ let g=0,p=0;people.forEach(x=>{const b=balance(x.id);g+=b.get;p+=b.pay});
+ $("totalGet").textContent=money(g);$("totalPay").textContent=money(p);
+ $("peopleCount").textContent=people.length.toLocaleString("fa-IR");
+ $("transactionCount").textContent=transactions.length.toLocaleString("fa-IR");
+ $("recentList").innerHTML=transactions.slice().reverse().slice(0,8).map(t=>`<div class="record"><b>${escapeHTML(personName(t.person))}</b> — ${kindName(t.kind)} — ${money(t.amount)}<div class="small">${escapeHTML(t.dateFa||t.date||"")}</div></div>`).join("")||'<p class="small">هنوز تراکنشی ثبت نشده است.</p>';
+}
+function renderReport(){
+ const from=$("dateFrom").value,to=$("dateTo").value;
+ const filtered=transactions.filter(t=>(!from||(t.date||"")>=from)&&(!to||(t.date||"")<=to));
+ let g=0,p=0,r=0,d=0;filtered.forEach(t=>{let a=Number(t.amount)||0;if(t.kind==="get")g+=a;if(t.kind==="pay")p+=a;if(t.kind==="receive")r+=a;if(t.kind==="payment")d+=a});
+ $("reportSummary").innerHTML=`<div class="summary"><div class="stat">طلب ثبت‌شده<b>${money(g)}</b></div><div class="stat">بدهی ثبت‌شده<b>${money(p)}</b></div><div class="stat">دریافت طلب<b>${money(r)}</b></div><div class="stat">پرداخت بدهی<b>${money(d)}</b></div></div>`;
+ $("reportTable").innerHTML='<table><thead><tr><th>شخص</th><th>مانده طلب</th><th>مانده بدهی</th></tr></thead><tbody>'+people.map(x=>{const b=balance(x.id);return `<tr><td>${escapeHTML(x.name)}</td><td>${money(b.get)}</td><td>${money(b.pay)}</td></tr>`}).join("")+'</tbody></table><p class="small">جمع مانده‌ها بر اساس همه سوابق است؛ بازه تاریخ فقط روی خلاصه تراکنش‌ها اعمال می‌شود.</p>';
+}
+function clearReportDates(){$("dateFrom").value=$("dateTo").value="";renderReport()}
+function download(name,content,type){
+ const blob=new Blob(["\ufeff",content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+}
+function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
+function exportCSV(){
+ const rows=[["تاریخ","شخص","نوع","مبلغ تومان","توضیحات"],...transactions.map(t=>[t.dateFa||t.date,personName(t.person),kindName(t.kind),t.amount,t.note])];
+ download("گزارش-دفتر-حساب.csv",rows.map(r=>r.map(csvCell).join(",")).join("\n"),"text/csv;charset=utf-8");
+}
+function backupData(){
+ const data={app:"دفتر طلب و بدهی",version:2,createdAt:new Date().toISOString(),people,transactions,invoices};
+ download("backup-daftar-hesab.json",JSON.stringify(data,null,2),"application/json");
+}
+function restoreData(){
+ const f=$("restoreFile").files[0];if(!f)return alert("ابتدا فایل پشتیبان را انتخاب کن");
+ const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!Array.isArray(d.people)||!Array.isArray(d.transactions))throw Error();if(!confirm("اطلاعات فعلی با اطلاعات فایل جایگزین شود؟ بهتر است ابتدا از اطلاعات فعلی پشتیبان بگیری."))return;people=d.people;transactions=d.transactions;invoices=Array.isArray(d.invoices)?d.invoices:[];persist();alert("بازیابی انجام شد")}catch(e){alert("فایل پشتیبان معتبر نیست")}};reader.readAsText(f);
+}
+function createInvoice(){
+ const person=Number($("invoicePerson").value),title=$("invoiceTitle").value.trim(),qty=Number($("invoiceQty").value),price=Number($("invoicePrice").value),discount=Number($("invoiceDiscount").value)||0;
+ if(!person||!title||qty<=0||price<0)return alert("شخص، شرح، تعداد و قیمت را بررسی کن");
+ const total=Math.max(0,qty*price-discount);
+ const inv={id:Date.now(),number:invoices.length+1,person,title,qty,price,discount,total,note:$("invoiceNote").value.trim(),date:new Date().toLocaleDateString("fa-IR"),created:safeDate()};
+ invoices.push(inv);persist();showInvoice(inv);
+ if(confirm("فاکتور ثبت شد. مبلغ نهایی به‌عنوان طلب این شخص ثبت شود؟")){transactions.push({id:Date.now()+1,person,kind:"get",amount:total,note:"فاکتور شماره "+inv.number,date:safeDate(),dateFa:new Date().toLocaleDateString("fa-IR")});persist();alert("طلب فاکتور در حساب شخص ثبت شد")}
+}
+function showInvoice(i){
+ $("invoiceOutput").innerHTML=`<div class="card" id="printInvoice"><h2>فاکتور شماره ${i.number}</h2><p>تاریخ: ${escapeHTML(i.date)}</p><p>مشتری: ${escapeHTML(personName(i.person))}</p><table><tr><th>شرح</th><th>تعداد</th><th>قیمت واحد</th><th>مبلغ</th></tr><tr><td>${escapeHTML(i.title)}</td><td>${i.qty}</td><td>${money(i.price)}</td><td>${money(i.qty*i.price)}</td></tr></table><p>تخفیف: ${money(i.discount)}</p><h3>مبلغ نهایی: ${money(i.total)}</h3><p>${escapeHTML(i.note)}</p><p>امضا: ........................</p><button class="no-print" onclick="printInvoice()">چاپ / ذخیره PDF</button><button class="secondary no-print" onclick="wordInvoice()">خروجی Word</button></div>`;
+}
+function printInvoice(){const w=window.open("","_blank");if(!w)return alert("مرورگر اجازه بازشدن پنجره چاپ را نداد");w.document.write("<html lang='fa' dir='rtl'><meta charset='UTF-8'><title>فاکتور</title><body style='font-family:Tahoma;padding:25px'>"+$("printInvoice").innerHTML+"</body></html>");w.document.close();w.print()}
+function wordInvoice(){const content="<!DOCTYPE html><html lang='fa' dir='rtl'><meta charset='UTF-8'><body style='font-family:Tahoma'>"+$("printInvoice").innerHTML+"</body></html>";download("factor.doc",content,"application/msword")}
+function exportInvoices(){
+ const rows=[["شماره","تاریخ","مشتری","شرح","تعداد","قیمت واحد","تخفیف","مبلغ نهایی"],...invoices.map(i=>[i.number,i.date,personName(i.person),i.title,i.qty,i.price,i.discount,i.total])];
+ download("فاکتورها.csv",rows.map(r=>r.map(csvCell).join(",")).join("\n"),"text/csv;charset=utf-8");
+}
+function smsFor(id){showTab("backup");$("smsPerson").value=String(id);prepareSMS()}
+function prepareSMS(){
+ const id=Number($("smsPerson").value),p=people.find(x=>Number(x.id)===id);if(!p)return alert("شخص را انتخاب کن");
+ const b=balance(id);const text=$("smsText").value.trim()||`سلام ${p.name}، مانده حساب شما: طلب ${money(b.get)}، بدهی ${money(b.pay)}.`;
+ $("smsText").value=text;
+ if(!p.phone)return alert("برای این شخص شماره موبایل ثبت نشده است");
+ location.href="sms:"+encodeURIComponent(p.phone)+"?body="+encodeURIComponent(text);
+}
+function renderAll(){
+ options("personSelect");options("invoicePerson");options("smsPerson");
+ renderHome();renderPeople();renderTransactions();renderReport();
+}
+renderAll();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 </script>
-  <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
-  });
-}
-  </script>
 </body>
 </html>
-<!-- update -->
